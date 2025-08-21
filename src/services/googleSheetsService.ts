@@ -218,7 +218,7 @@ export class GoogleSheetsService {
   /**
    * Initialize headers for all sheets
    */
-  private async initializeSheetHeaders(_spreadsheetId: string): Promise<void> {
+  private async initializeSheetHeaders(spreadsheetId: string): Promise<void> {
     const headerData = [
       {
         range: 'Config_Estudios!A1:L1',
@@ -246,7 +246,37 @@ export class GoogleSheetsService {
       }
     ];
 
-    await this.batchUpdate(headerData);
+    await this.batchUpdateWithSpreadsheetId(spreadsheetId, headerData);
+  }
+
+  /**
+   * Batch update with specific spreadsheet ID (for initialization)
+   */
+  private async batchUpdateWithSpreadsheetId(spreadsheetId: string, updates: BatchUpdate[]): Promise<void> {
+    const accessToken = await authService.ensureValidToken();
+
+    const response = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchUpdate`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          valueInputOption: 'RAW',
+          data: updates.map(update => ({
+            range: update.range,
+            values: update.values
+          }))
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Failed to batch update: ${error.error?.message || 'Unknown error'}`);
+    }
   }
 
   /**

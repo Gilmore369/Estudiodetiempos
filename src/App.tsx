@@ -7,14 +7,13 @@ import ErrorBoundary from '@/components/common/ErrorBoundary';
 import OfflineIndicator from '@/components/common/OfflineIndicator';
 import { useState } from 'react';
 
-// --- Componentes de Vista (Ejemplos) ---
-// Deberías reemplazar estos con tus componentes reales
-const Dashboard = () => <div>Dashboard View</div>;
-const MasterDataManager = () => <div>Master Data Manager View</div>;
-const TimeStudyManager = () => <div>Time Study Manager View</div>;
-const PerformanceEvaluation = () => <div>Performance Evaluation View</div>;
-const ResultsDashboard = () => <div>Results Dashboard View</div>;
-const DAPBuilder = () => <div>DAP Builder View</div>;
+// --- Componentes de Vista Reales ---
+import Dashboard from '@/components/Dashboard';
+import MasterDataManager from '@/components/masters/MasterDataManager';
+import TimeStudyManager from '@/components/study/TimeStudyManager';
+import PerformanceEvaluation from '@/components/evaluation/PerformanceEvaluation';
+import ResultsDashboard from '@/components/results/ResultsDashboard';
+import DAPBuilder from '@/components/dap/DAPBuilder';
 // -----------------------------------------
 
 

@@ -9,10 +9,19 @@ const GOOGLE_SCOPES = [
   'email'
 ].join(' ');
 
+declare global {
+  interface Window {
+    google: any;
+    gapi: any;
+  }
+}
+
 export class AuthService {
   private static instance: AuthService;
   private gapi: any = null;
-  private auth2: any = null;
+  private tokenClient: any = null;
+  private currentUser: GoogleUser | null = null;
+  private accessToken: string | null = null;
 
   private constructor() {}
 
@@ -33,86 +42,138 @@ export class AuthService {
         return;
       }
 
-      // Load Google API script
-      if (!(window as any).gapi) {
-        const script = document.createElement('script');
-        script.src = 'https://apis.google.com/js/api.js';
-        script.onload = () => this.loadGapi().then(resolve).catch(reject);
-        script.onerror = () => reject(new Error('Failed to load Google API script'));
-        document.head.appendChild(script);
-      } else {
-        this.loadGapi().then(resolve).catch(reject);
+      // Wait for Google Identity Services to load
+      const checkGoogleLoaded = () => {
+        if (window.google && window.google.accounts) {
+          this.initializeGoogleServices().then(resolve).catch(reject);
+        } else {
+          setTimeout(checkGoogleLoaded, 100);
+        }
+      };
+
+      checkGoogleLoaded();
+    });
+  }
+
+  private async initializeGoogleServices(): Promise<void> {
+    // Load GAPI for Sheets API
+    if (!window.gapi) {
+      await this.loadGapi();
+    }
+
+    // Initialize GAPI client
+    await new Promise<void>((resolve, reject) => {
+      window.gapi.load('client', {
+        callback: resolve,
+        onerror: reject
+      });
+    });
+
+    await window.gapi.client.init({
+      discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4']
+    });
+
+    this.gapi = window.gapi;
+
+    // Initialize Google Identity Services token client
+    this.tokenClient = window.google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: GOOGLE_SCOPES,
+      callback: (response: any) => {
+        if (response.error) {
+          console.error('Token response error:', response.error);
+          return;
+        }
+        this.accessToken = response.access_token;
+        this.gapi.client.setToken({ access_token: response.access_token });
       }
     });
   }
 
   private async loadGapi(): Promise<void> {
-    this.gapi = (window as any).gapi;
-    
-    await new Promise<void>((resolve, reject) => {
-      this.gapi.load('auth2', {
-        callback: resolve,
-        onerror: reject
-      });
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://apis.google.com/js/api.js';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load Google API script'));
+      document.head.appendChild(script);
     });
-
-    await new Promise<void>((resolve, reject) => {
-      this.gapi.load('client', {
-        callback: resolve,
-        onerror: reject
-      });
-    });
-
-    // Initialize the client
-    await this.gapi.client.init({
-      clientId: GOOGLE_CLIENT_ID,
-      scope: GOOGLE_SCOPES,
-      discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4']
-    });
-
-    this.auth2 = this.gapi.auth2.getAuthInstance();
   }
 
   /**
    * Sign in with Google
    */
   async signIn(): Promise<GoogleUser> {
-    if (!this.auth2) {
+    if (!this.tokenClient) {
       throw new Error('Google Auth not initialized');
     }
 
-    try {
-      const authResult = await this.auth2.signIn();
-      const profile = authResult.getBasicProfile();
-      const authResponse = authResult.getAuthResponse();
+    return new Promise((resolve, reject) => {
+      // Configure the token client callback
+      this.tokenClient.callback = async (tokenResponse: any) => {
+        if (tokenResponse.error) {
+          reject(new Error(tokenResponse.error));
+          return;
+        }
+        
+        try {
+          this.accessToken = tokenResponse.access_token;
+          this.gapi.client.setToken({ access_token: tokenResponse.access_token });
+          
+          // Get user info from the access token
+          const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: {
+              'Authorization': `Bearer ${tokenResponse.access_token}`
+            }
+          });
 
-      const user: GoogleUser = {
-        id: profile.getId(),
-        email: profile.getEmail(),
-        name: profile.getName(),
-        picture: profile.getImageUrl()
+          let user: GoogleUser;
+          if (userInfoResponse.ok) {
+            const userInfo = await userInfoResponse.json();
+            user = {
+              id: userInfo.id,
+              email: userInfo.email,
+              name: userInfo.name,
+              picture: userInfo.picture || ''
+            };
+          } else {
+            // Fallback user info
+            user = {
+              id: 'user_' + Date.now(),
+              email: 'user@example.com',
+              name: 'Google User',
+              picture: ''
+            };
+          }
+
+          this.currentUser = user;
+          this.storeTokens(tokenResponse.access_token, '');
+          resolve(user);
+        } catch (error) {
+          reject(error);
+        }
       };
 
-      // Store tokens
-      this.storeTokens(authResponse.access_token, authResponse.id_token);
-
-      return user;
-    } catch (error) {
-      console.error('Sign in failed:', error);
-      throw new Error('Failed to sign in with Google');
-    }
+      // Request access token
+      this.tokenClient.requestAccessToken({ prompt: 'consent' });
+    });
   }
 
   /**
    * Sign out
    */
   async signOut(): Promise<void> {
-    if (!this.auth2) {
-      throw new Error('Google Auth not initialized');
-    }
-
     try {
-      await this.auth2.signOut();
+      if (window.google && window.google.accounts) {
+        window.google.accounts.id.disableAutoSelect();
+      }
+      
+      if (this.gapi && this.accessToken) {
+        this.gapi.client.setToken(null);
+      }
+
+      this.currentUser = null;
+      this.accessToken = null;
       this.clearTokens();
     } catch (error) {
       console.error('Sign out failed:', error);
@@ -124,55 +185,45 @@ export class AuthService {
    * Check if user is signed in
    */
   isSignedIn(): boolean {
-    return this.auth2?.isSignedIn.get() || false;
+    return this.currentUser !== null && this.accessToken !== null;
   }
 
   /**
    * Get current user
    */
   getCurrentUser(): GoogleUser | null {
-    if (!this.isSignedIn()) return null;
-
-    const user = this.auth2.currentUser.get();
-    const profile = user.getBasicProfile();
-
-    return {
-      id: profile.getId(),
-      email: profile.getEmail(),
-      name: profile.getName(),
-      picture: profile.getImageUrl()
-    };
+    return this.currentUser;
   }
 
   /**
    * Get access token
    */
   getAccessToken(): string | null {
-    if (!this.isSignedIn()) return null;
-    
-    const user = this.auth2.currentUser.get();
-    const authResponse = user.getAuthResponse();
-    return authResponse.access_token;
+    return this.accessToken;
   }
 
   /**
    * Refresh access token
    */
   async refreshToken(): Promise<string> {
-    if (!this.auth2) {
+    if (!this.tokenClient) {
       throw new Error('Google Auth not initialized');
     }
 
-    try {
-      const user = this.auth2.currentUser.get();
-      const authResponse = await user.reloadAuthResponse();
-      
-      this.storeTokens(authResponse.access_token, authResponse.id_token);
-      return authResponse.access_token;
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      throw new Error('Failed to refresh token');
-    }
+    return new Promise((resolve, reject) => {
+      this.tokenClient.callback = (response: any) => {
+        if (response.error) {
+          reject(new Error(response.error));
+          return;
+        }
+        
+        this.accessToken = response.access_token;
+        this.storeTokens(response.access_token, '');
+        resolve(response.access_token);
+      };
+
+      this.tokenClient.requestAccessToken();
+    });
   }
 
   /**
@@ -211,7 +262,7 @@ export class AuthService {
    * Auto-refresh token if needed
    */
   async ensureValidToken(): Promise<string> {
-    if (!this.isSignedIn()) {
+    if (!this.accessToken) {
       throw new Error('User not signed in');
     }
 
@@ -219,7 +270,7 @@ export class AuthService {
       return await this.refreshToken();
     }
 
-    return this.getAccessToken()!;
+    return this.accessToken;
   }
 }
 
