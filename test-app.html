@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Google Auth</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <h1>Test Google Auth</h1>
+    <div id="g_id_onload"
+         data-client_id="demo_client_id_replace_with_real_one"
+         data-callback="handleCredentialResponse">
+    </div>
+    <div class="g_id_signin" data-type="standard"></div>
+
+    <script>
+        function handleCredentialResponse(response) {
+            console.log("Encoded JWT ID token: " + response.credential);
+        }
+        
+        window.onload = function () {
+            console.log("Google script loaded:", typeof google !== 'undefined');
+            console.log("Google accounts:", typeof google?.accounts !== 'undefined');
+        }
+    </script>
+</body>
+</html>
