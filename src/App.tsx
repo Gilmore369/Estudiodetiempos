@@ -1,44 +1,32 @@
-
-import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 
 import LoginScreen from '@/components/auth/LoginScreen';
 import GoogleSheetSetup from '@/components/auth/GoogleSheetSetup';
 import AppLayout from '@/components/layout/AppLayout';
-import Dashboard from '@/components/Dashboard';
-import MasterDataManager from '@/components/masters/MasterDataManager';
-import TimeStudyManager from '@/components/study/TimeStudyManager';
-import PerformanceEvaluation from '@/components/evaluation/PerformanceEvaluation';
-import ResultsDashboard from '@/components/results/ResultsDashboard';
-import DAPBuilder from '@/components/dap/DAPBuilder';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 import OfflineIndicator from '@/components/common/OfflineIndicator';
+import { useState } from 'react';
+
+// --- Componentes de Vista (Ejemplos) ---
+// Deberías reemplazar estos con tus componentes reales
+const Dashboard = () => <div>Dashboard View</div>;
+const MasterDataManager = () => <div>Master Data Manager View</div>;
+const TimeStudyManager = () => <div>Time Study Manager View</div>;
+const PerformanceEvaluation = () => <div>Performance Evaluation View</div>;
+const ResultsDashboard = () => <div>Results Dashboard View</div>;
+const DAPBuilder = () => <div>DAP Builder View</div>;
+// -----------------------------------------
+
 
 function App() {
-  const { isAuthenticated, sheetsConfig, initialize } = useAuthStore();
+  // Obtenemos el estado directamente del store.
+  const { isAuthenticated, sheetsConfig } = useAuthStore();
   const [currentView, setCurrentView] = useState('dashboard');
-  const [isInitialized, setIsInitialized] = useState(false);
 
-  useEffect(() => {
-    // Initialize the app
-    initialize().finally(() => {
-      setIsInitialized(true);
-    });
-  }, [initialize]);
+  // Ya no necesitamos el estado 'isInitialized' porque el LoginScreen
+  // se encarga de su propia lógica de carga.
 
-  // Show loading while initializing
-  if (!isInitialized) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Initializing Standard Time Pro...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show login screen if not authenticated
+  // 1. Si el usuario NO está autenticado, mostramos la pantalla de login.
   if (!isAuthenticated) {
     return (
       <ErrorBoundary>
@@ -48,19 +36,17 @@ function App() {
     );
   }
 
-  // Show Google Sheets setup if not configured
+  // 2. Si el usuario SÍ está autenticado, pero NO ha configurado su hoja de cálculo.
   if (!sheetsConfig) {
     return (
       <ErrorBoundary>
         <OfflineIndicator />
-        <GoogleSheetSetup onComplete={() => {
-          // Configuration completed, the store will be updated automatically
-        }} />
+        <GoogleSheetSetup />
       </ErrorBoundary>
     );
   }
 
-  // Show main application
+  // 3. Si el usuario está autenticado Y ha configurado su hoja, mostramos la app principal.
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':

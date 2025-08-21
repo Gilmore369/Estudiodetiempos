@@ -1,135 +1,56 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { AuthState, GoogleUser, GoogleSheetsConfig } from '@/types';
-import { authService } from '@/services/authService';
 
-interface AuthStore extends Omit<AuthState, 'refreshToken'> {
-  // Actions
-  initialize: () => Promise<void>;
-  signIn: () => Promise<void>;
-  signOut: () => Promise<void>;
-  setUser: (user: GoogleUser | null) => void;
-  setSheetsConfig: (config: GoogleSheetsConfig | null) => void;
-  refreshToken: () => Promise<void>;
-  checkAuthStatus: () => void;
+// Definimos una interfaz para el perfil del usuario
+interface UserProfile {
+  name: string;
+  email: string;
+  picture: string;
 }
 
-export const useAuthStore = create<AuthStore>()(
+// Definimos la estructura de nuestro store de autenticación
+interface AuthState {
+  isAuthenticated: boolean;
+  userProfile: UserProfile | null;
+  sheetsConfig: { sheetId: string } | null; // Guardaremos la configuración de la hoja aquí
+  setAuthSuccess: (userProfile: UserProfile) => void;
+  setSheetsConfig: (config: { sheetId: string }) => void;
+  logout: () => void;
+}
+
+export const useAuthStore = create<AuthState>()(
+  // `persist` guarda automáticamente el estado en el LocalStorage del navegador.
+  // Esto permite que el usuario siga logueado si refresca la página.
   persist(
-    (set, get) => ({
-      // Initial state
+    (set) => ({
+      // Estado inicial
       isAuthenticated: false,
-      user: null,
-      accessToken: null,
+      userProfile: null,
       sheetsConfig: null,
 
-      // Actions
-      initialize: async () => {
-        try {
-          await authService.initialize();
-          
-          // Check if user is already signed in
-          if (authService.isSignedIn()) {
-            const user = authService.getCurrentUser();
-            const accessToken = authService.getAccessToken();
-            
-            set({
-              isAuthenticated: true,
-              user,
-              accessToken
-            });
-          }
-        } catch (error) {
-          console.error('Failed to initialize auth:', error);
-          set({
-            isAuthenticated: false,
-            user: null,
-            accessToken: null
-          });
-        }
-      },
+      // Acción para cuando el login es exitoso
+      setAuthSuccess: (userProfile) =>
+        set({ isAuthenticated: true, userProfile }),
 
-      signIn: async () => {
-        try {
-          const user = await authService.signIn();
-          const accessToken = authService.getAccessToken();
-
-          set({
-            isAuthenticated: true,
-            user,
-            accessToken
-          });
-        } catch (error) {
-          console.error('Sign in failed:', error);
-          throw error;
-        }
-      },
-
-      signOut: async () => {
-        try {
-          await authService.signOut();
-          
-          set({
-            isAuthenticated: false,
-            user: null,
-            accessToken: null,
-            sheetsConfig: null
-          });
-        } catch (error) {
-          console.error('Sign out failed:', error);
-          throw error;
-        }
-      },
-
-      setUser: (user) => {
-        set({ user });
-      },
-
-      setSheetsConfig: (config) => {
-        set({ sheetsConfig: config });
-      },
-
-      refreshToken: async () => {
-        try {
-          const accessToken = await authService.refreshToken();
-          set({ accessToken });
-        } catch (error) {
-          console.error('Token refresh failed:', error);
-          // If refresh fails, sign out user
-          get().signOut();
-          throw error;
-        }
-      },
-
-      checkAuthStatus: () => {
-        const isSignedIn = authService.isSignedIn();
-        const currentState = get();
-
-        if (isSignedIn && !currentState.isAuthenticated) {
-          // User is signed in but store doesn't reflect it
-          const user = authService.getCurrentUser();
-          const accessToken = authService.getAccessToken();
-          
-          set({
-            isAuthenticated: true,
-            user,
-            accessToken
-          });
-        } else if (!isSignedIn && currentState.isAuthenticated) {
-          // User is signed out but store still shows authenticated
-          set({
-            isAuthenticated: false,
-            user: null,
-            accessToken: null
-          });
-        }
-      }
+      // Acción para guardar la configuración de la hoja de cálculo
+      setSheetsConfig: (config) => set({ sheetsConfig: config }),
+      
+      // Acción para cerrar sesión
+      logout: () =>
+        set({
+          isAuthenticated: false,
+          userProfile: null,
+          sheetsConfig: null, // También limpiamos la config al salir
+        }),
     }),
     {
-      name: 'auth-storage',
+      name: 'auth-storage', // Nombre de la clave en LocalStorage
+      // Solo persistimos la información necesaria para mantener la sesión
       partialize: (state) => ({
-        sheetsConfig: state.sheetsConfig
-      })
+        isAuthenticated: state.isAuthenticated,
+        userProfile: state.userProfile,
+        sheetsConfig: state.sheetsConfig,
+      }),
     }
   )
 );
