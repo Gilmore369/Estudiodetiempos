@@ -1,0 +1,48 @@
+{
+  "name": "standard-time-pro",
+  "private": false,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Professional time study application with Google Sheets integration",
+  "author": "Industrial Engineering Time Study App",
+  "keywords": ["time-study", "industrial-engineering", "westinghouse", "google-sheets", "pwa"],
+  "homepage": "https://github.com/yourusername/standard-time-pro",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/standard-time-pro.git"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.16",
+    "autoprefixer": "^10.4.21",
+    "google-auth-library": "^10.2.1",
+    "googleapis": "^156.0.0",
+    "postcss": "^8.5.6",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "vite-plugin-pwa": "^1.0.3",
+    "workbox-window": "^7.3.0",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.33.0",
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.0",
+    "eslint": "^9.33.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.3.0",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.39.1",
+    "vite": "^7.1.2"
+  }
+}
