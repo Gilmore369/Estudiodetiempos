@@ -1,86 +1,65 @@
-# Standard Time Pro - Deployment Guide
+# Deployment Guide - Standard Time Pro
 
-## 🚀 Deployment Instructions
+## Vercel Deployment
 
-### Prerequisites
-1. Google Cloud Console project
-2. GitHub account
-3. Vercel account
+### Step 1: Deploy to Vercel
 
-### Step 1: Google OAuth Setup
+1. Go to [Vercel](https://vercel.com)
+2. Sign in with GitHub
+3. Click "New Project"
+4. Import the repository: `Gilmore369/Estudiodetiempos`
+5. Select the `standard-time-pro` folder as the root directory
+6. Framework Preset: **Vite**
+7. Build Command: `npm run build`
+8. Output Directory: `dist`
+9. Install Command: `npm install`
+
+### Step 2: Configure Environment Variables
+
+In Vercel project settings, add:
+
+- **Name**: `VITE_GOOGLE_CLIENT_ID`
+- **Value**: `155913873528-nns0t4l1ss9tag26e2ik1ase5cdu3blm.apps.googleusercontent.com`
+
+### Step 3: Update Google OAuth Settings
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select existing one
-3. Enable the following APIs:
-   - Google Sheets API
-   - Google Drive API
-4. Go to "Credentials" → "Create Credentials" → "OAuth 2.0 Client ID"
-5. Configure OAuth consent screen
-6. Add authorized origins:
-   - `http://localhost:5173` (for development)
-   - `https://your-vercel-domain.vercel.app` (for production)
-7. Copy the Client ID
+2. Select your "Standard Time Pro" project
+3. Go to "APIs & Services" → "Credentials"
+4. Edit your OAuth 2.0 Client ID
+5. Add your Vercel domain to "Authorized JavaScript origins":
+   - `https://your-project-name.vercel.app`
+6. Add to "Authorized redirect URIs":
+   - `https://your-project-name.vercel.app`
 
-### Step 2: Environment Variables
+### Step 4: Deploy
 
-Create a `.env` file in the project root:
+Click "Deploy" in Vercel and wait for the build to complete.
 
-```env
-VITE_GOOGLE_CLIENT_ID=your_google_client_id_here
-```
+## Production URL
 
-For Vercel deployment, add this as an environment variable in the Vercel dashboard.
+Once deployed, your app will be available at:
+`https://your-project-name.vercel.app`
 
-### Step 3: Deploy to Vercel
+## Features Available
 
-1. Push code to GitHub
-2. Connect GitHub repository to Vercel
-3. Add environment variable `VITE_GOOGLE_CLIENT_ID` in Vercel dashboard
-4. Deploy
+✅ Google OAuth Authentication
+✅ Google Sheets Integration
+✅ Time Study Management
+✅ Stopwatch/Chronometer
+✅ Element Timing
+✅ Data Persistence
+✅ Offline Support (PWA)
+✅ Westinghouse Performance Evaluation
+✅ Process Analysis Diagrams (DAP)
+✅ Results Dashboard
 
-### Step 4: Update OAuth Settings
+## Usage Instructions
 
-After deployment, update your Google OAuth settings:
-1. Add your Vercel domain to authorized origins
-2. Test the authentication flow
-
-## 🔧 Configuration
-
-### Google Sheets Structure
-The app will automatically create these sheets:
-- Config_Estudios
-- DB_Colaboradores  
-- DB_Procesos
-- Tiempos_Observados
-- Calculo_y_Resultados
-- DAP_Data
-
-### PWA Features
-- Service Worker for offline functionality
-- App installation support
-- Responsive design for all devices
-
-## 📱 Usage
-1. Visit the deployed URL
-2. Sign in with Google
-3. Connect to existing Google Sheet or create new one
-4. Start conducting time studies!
-
-## 🛠️ Development
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-```
-
-## 📞 Support
-For issues or questions, refer to the implementation documentation.
+1. **Login**: Use your Google account to authenticate
+2. **Setup**: Configure your Google Sheets integration
+3. **Create Study**: Set up a new time study with process and collaborator info
+4. **Add Elements**: Define the work elements you want to time
+5. **Start Timing**: Use the chronometer to record element times
+6. **Analyze**: View results and perform Westinghouse evaluations
+7. **Export**: All data is automatically synced to your Google Sheets

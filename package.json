@@ -12,16 +12,17 @@
     "google-sheets",
     "pwa"
   ],
-  "homepage": "https://github.com/yourusername/standard-time-pro",
+  "homepage": "https://github.com/Gilmore369/Estudiodetiempos",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/standard-time-pro.git"
+    "url": "https://github.com/Gilmore369/Estudiodetiempos.git"
   },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:prod": "npm run lint && npm run build"
   },
   "dependencies": {
     "@tailwindcss/forms": "^0.5.10",
