@@ -24,10 +24,12 @@
 ## Paso 4: Configurar Orígenes Autorizados
 
 En "Orígenes de JavaScript autorizados", agrega:
+
 - `http://localhost:5173`
 - `http://127.0.0.1:5173`
 
 En "URI de redirección autorizados", agrega:
+
 - `http://localhost:5173`
 - `http://127.0.0.1:5173`
 
@@ -37,6 +39,7 @@ En "URI de redirección autorizados", agrega:
 2. Pégalo en el archivo `.env` reemplazando `demo_client_id_replace_with_real_one`
 
 ## Ejemplo de .env:
+
 ```
 VITE_GOOGLE_CLIENT_ID=123456789-abcdefghijklmnop.apps.googleusercontent.com
 ```
