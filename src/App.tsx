@@ -41,7 +41,9 @@ function App() {
     return (
       <ErrorBoundary>
         <OfflineIndicator />
-        <GoogleSheetSetup />
+        <GoogleSheetSetup onComplete={() => {
+          // Configuration completed, the store will be updated automatically
+        }} />
       </ErrorBoundary>
     );
   }
